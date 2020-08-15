@@ -1,0 +1,44 @@
+### Send get request to get all users card
+GET http://127.0.0.1:8000/getCards?userId=1 HTTP/1.1
+
+### Send post request to add basic card for user 1
+POST http://127.0.0.1:8000/addCard HTTP/1.1
+Content-Type: application/json
+
+{
+  "UserId": 1,
+  "Type": "basic",
+  "Issuer": "Visa"
+}
+
+### Send post request to add virtual card for user 1
+POST http://127.0.0.1:8000/addCard HTTP/1.1
+Content-Type: application/json
+
+{
+  "UserId": 1,
+  "Type": "virtual",
+  "Issuer": "Maestro"
+}
+
+### Send post request to add virtual card for user 11 - error, base card does't exist
+POST http://127.0.0.1:8000/addCard HTTP/1.1
+Content-Type: application/json
+
+{
+  "UserId": 11,
+  "Type": "virtual",
+  "Issuer": "Maestro"
+}
+
+### Send post request to add additional card for user 1 - error, card issuer does not exist
+POST http://127.0.0.1:8000/addCard HTTP/1.1
+Content-Type: application/json
+
+{
+  "UserId": 1,
+  "Type": "additional",
+  "Issuer": "Express"
+}
+
+###
