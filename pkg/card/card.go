@@ -1,7 +1,6 @@
 package card
 
 import (
-	"context"
 	"errors"
 	"sync"
 )
@@ -11,6 +10,7 @@ var (
 	ErrIssuerDoesNotExist = errors.New("card issuer does not exist")
 	ErrUserDoesNotExist   = errors.New("user does not exist")
 	ErrNoBaseCard         = errors.New("user dont have base card")
+	ErrNotSpecifiedUserId = errors.New("user id unspecified ")
 )
 
 type Card struct {
@@ -27,9 +27,7 @@ func NewService() *Service {
 	return &Service{}
 }
 
-func (s *Service) All(context.Context) []*Card {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+func (s *Service) All() []*Card {
 	return s.Cards
 }
 
@@ -38,19 +36,19 @@ func setNumber(num int64) int64 {
 	return num
 }
 
-func (s *Service) Add(userId int64, typeCard, issuerCard string) (*Card, error) {
-	err := getIssuerCard(issuerCard)
+func (s *Service) Add(userId int64, idTypeCard, idIssuerCard string) (*Card, error) {
+	err := getIssuerCard(idIssuerCard)
 	if err != nil {
 		return &Card{}, err
 	}
 
-	err = getTypeCard(typeCard)
+	err = getTypeCard(idTypeCard)
 	if err != nil {
 		return &Card{}, err
 	}
 
 	number, err := s.getBaseCard(userId)
-	if err != nil && typeCard != "basic" {
+	if err != nil && idTypeCard != "1" {
 		return &Card{}, err
 	}
 
@@ -58,8 +56,8 @@ func (s *Service) Add(userId int64, typeCard, issuerCard string) (*Card, error) 
 		Id:     setNumber(number),
 		UserId: userId,
 		Number: setNumber(number),
-		Type:   typeCard,
-		Issuer: issuerCard,
+		Type:   idTypeCard,
+		Issuer: idIssuerCard,
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -67,24 +65,35 @@ func (s *Service) Add(userId int64, typeCard, issuerCard string) (*Card, error) 
 	return card, nil
 }
 
-func getIssuerCard(issuerCard string) error {
-	issuers := []string{"Visa", "Maestro", "MasterCard"}
-	for _, v := range issuers {
-		if v == issuerCard {
-			return nil
-		}
+func getIssuerCard(idIssuerCard string) error {
+	issuers := map[string]string{
+		"1": "Visa",
+		"2": "Maestro",
+		"3": "MasterCard",
 	}
-	return ErrIssuerDoesNotExist
+
+	_, ok := issuers[idIssuerCard]
+	if !ok {
+		return ErrIssuerDoesNotExist
+	}
+
+	return nil
 }
 
-func getTypeCard(typeCard string) error {
-	types := []string{"basic", "additional", "virtual"}
-	for _, value := range types {
-		if value == typeCard {
-			return nil
-		}
+func getTypeCard(idTypeCard string) error {
+	issuers := map[string]string{
+		"1": "basic",
+		"2": "additional",
+		"3": "virtual",
 	}
-	return ErrTypeDoesNotExist
+
+	_, ok := issuers[idTypeCard]
+	if !ok {
+		return ErrTypeDoesNotExist
+	}
+
+	return nil
+
 }
 
 func (s *Service) getBaseCard(userId int64) (number int64, err error) {

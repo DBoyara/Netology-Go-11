@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 )
 
@@ -31,16 +30,22 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getCards(w http.ResponseWriter, r *http.Request) {
-	userId, ok := url.Parse(r.URL.Query().Get("userId"))
-	intUserId, err := strconv.Atoi(fmt.Sprintf("%v", userId))
+	userId := r.URL.Query().Get("userId")
+	if userId == "" {
+		dtos := dto.CardErrDTO{Err: card.ErrNotSpecifiedUserId.Error()}
+		jsonResponse(w, r, dtos)
+		return
+	}
+
+	intUserId, err := strconv.Atoi(fmt.Sprintf("%s", userId))
 	
-	if ok != nil || intUserId == 0 || err != nil {
+	if err != nil {
 		dtos := dto.CardErrDTO{Err: card.ErrUserDoesNotExist.Error()}
 		jsonResponse(w, r, dtos)
 		return
 	}
 
-	cards := s.cardSvc.All(r.Context())
+	cards := s.cardSvc.All()
 	var dtos []*dto.CardDTO
 
 	for _, c := range cards {
@@ -62,13 +67,17 @@ func (s *Server) getCards(w http.ResponseWriter, r *http.Request) {
 func (s *Server) addCard(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Print(err)
+		dtos := dto.CardErrDTO{Err: err.Error()}
+		jsonResponse(w, r, dtos)
+		return
 	}
 
 	params := &dto.CardDTO{}
 	err = json.Unmarshal(body, params)
 	if err != nil {
-		log.Print(err)
+		dtos := dto.CardErrDTO{Err: err.Error()}
+		jsonResponse(w, r, dtos)
+		return
 	}
 	newCard, err := s.cardSvc.Add(params.UserId, params.Type, params.Issuer)
 

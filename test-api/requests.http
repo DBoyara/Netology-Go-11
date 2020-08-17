@@ -7,8 +7,8 @@ Content-Type: application/json
 
 {
   "UserId": 1,
-  "Type": "basic",
-  "Issuer": "Visa"
+  "Type": "2",
+  "Issuer": "1"
 }
 
 ### Send post request to add virtual card for user 1
@@ -17,8 +17,8 @@ Content-Type: application/json
 
 {
   "UserId": 1,
-  "Type": "virtual",
-  "Issuer": "Maestro"
+  "Type": "3",
+  "Issuer": "2"
 }
 
 ### Send post request to add virtual card for user 11 - error, base card does't exist
@@ -27,8 +27,8 @@ Content-Type: application/json
 
 {
   "UserId": 11,
-  "Type": "virtual",
-  "Issuer": "Maestro"
+  "Type": "3",
+  "Issuer": "2"
 }
 
 ### Send post request to add additional card for user 1 - error, card issuer does not exist
@@ -37,8 +37,8 @@ Content-Type: application/json
 
 {
   "UserId": 1,
-  "Type": "additional",
-  "Issuer": "Express"
+  "Type": "2",
+  "Issuer": "6"
 }
 
 ###
