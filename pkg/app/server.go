@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/DBoyara/Netology-Go-11/pkg/app/dto"
 	"github.com/DBoyara/Netology-Go-11/pkg/card"
 	"io/ioutil"
@@ -37,7 +36,7 @@ func (s *Server) getCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	intUserId, err := strconv.Atoi(fmt.Sprintf("%s", userId))
+	intUserId, err := strconv.Atoi(userId)
 	
 	if err != nil {
 		dtos := dto.CardErrDTO{Err: card.ErrUserDoesNotExist.Error()}

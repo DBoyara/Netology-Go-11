@@ -36,19 +36,19 @@ func setNumber(num int64) int64 {
 	return num
 }
 
-func (s *Service) Add(userId int64, idTypeCard, idIssuerCard string) (*Card, error) {
+func (s *Service) Add(userId int64, typeCard, idIssuerCard string) (*Card, error) {
 	err := getIssuerCard(idIssuerCard)
 	if err != nil {
 		return &Card{}, err
 	}
 
-	err = getTypeCard(idTypeCard)
+	err = getTypeCard(typeCard)
 	if err != nil {
 		return &Card{}, err
 	}
 
 	number, err := s.getBaseCard(userId)
-	if err != nil && idTypeCard != "1" {
+	if err != nil && typeCard != "base" {
 		return &Card{}, err
 	}
 
@@ -56,7 +56,7 @@ func (s *Service) Add(userId int64, idTypeCard, idIssuerCard string) (*Card, err
 		Id:     setNumber(number),
 		UserId: userId,
 		Number: setNumber(number),
-		Type:   idTypeCard,
+		Type:   typeCard,
 		Issuer: idIssuerCard,
 	}
 	s.mu.Lock()
@@ -65,30 +65,28 @@ func (s *Service) Add(userId int64, idTypeCard, idIssuerCard string) (*Card, err
 	return card, nil
 }
 
-func getIssuerCard(idIssuerCard string) error {
-	issuers := map[string]string{
-		"1": "Visa",
-		"2": "Maestro",
-		"3": "MasterCard",
+func getIssuerCard(issuerCard string) error {
+	issuers := map[string]struct{}{
+		"Visa": {},
+		"Maestro": {},
+		"MasterCard": {},
 	}
 
-	_, ok := issuers[idIssuerCard]
-	if !ok {
+	if _, ok := issuers[issuerCard]; !ok {
 		return ErrIssuerDoesNotExist
 	}
 
 	return nil
 }
 
-func getTypeCard(idTypeCard string) error {
-	issuers := map[string]string{
-		"1": "basic",
-		"2": "additional",
-		"3": "virtual",
+func getTypeCard(typeCard string) error {
+	types := map[string]struct{}{
+		"basic": {},
+		"additional": {},
+		"virtual": {},
 	}
 
-	_, ok := issuers[idTypeCard]
-	if !ok {
+	if _, ok := types[typeCard]; !ok {
 		return ErrTypeDoesNotExist
 	}
 
