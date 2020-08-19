@@ -10,7 +10,7 @@ import (
 )
 
 const defaultPort = "9999"
-const defaultHost = "127.0.0.1"
+const defaultHost = ""
 
 func main() {
 	port, ok := os.LookupEnv("PORT")
