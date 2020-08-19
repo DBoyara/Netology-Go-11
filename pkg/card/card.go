@@ -31,21 +31,24 @@ type Service struct {
 }
 
 func NewService() *Service {
-	return &Service{}
+	return &Service{
+		mu:     sync.RWMutex{},
+		Cards:  map[UserID]UserCards{},
+		lastID: 0,
+	}
 }
 
 func (s *Service) All(id UserID) (UserCards, error) {
 	cards, err := s.getCardsByUserID(id)
 	if err != nil {
-		return UserCards{}, err
+		return nil, err
 	}
 	return cards, nil
 }
 
-// раз мы работаем с упорядоченным массивом, то можно просто взять последний элемент с его номером
 func (c UserCards) nextCardNumber() int64 {
 	if len(c) == 0 {
-		return 0
+		return 1
 	}
 	i := c[len(c)-1]
 	return setNumber(i.Number)
@@ -59,26 +62,26 @@ func setNumber(num int64) int64 {
 func (s *Service) getCardsByUserID(id UserID) (UserCards, error) {
 	v, ok := s.Cards[id]
 	if !ok {
-		return UserCards{}, ErrNoBaseCard
+		return nil, ErrNoBaseCard
 	}
 	return v, nil
 }
 
-func (s *Service) Add(userId int64, typeCard, issuerCard string) (*Card, error) {
+func (s *Service) Add(userId UserID, typeCard, issuerCard string) (*Card, error) {
 
-	cards, err := s.getCardsByUserID(UserID(userId))
+	cards, err := s.getCardsByUserID(userId)
 	if err != nil && typeCard != "base" {
-		return &Card{}, err
+		return nil, err
 	}
 
 	err = getIssuerCard(issuerCard)
 	if err != nil {
-		return &Card{}, err
+		return nil, err
 	}
 
 	err = getTypeCard(typeCard)
 	if err != nil {
-		return &Card{}, err
+		return nil, err
 	}
 
 	s.lastID = cards.nextCardNumber()
@@ -89,7 +92,7 @@ func (s *Service) Add(userId int64, typeCard, issuerCard string) (*Card, error) 
 		Type:   typeCard,
 		Number: s.lastID,
 	}
-	cards = append(cards, newCard)
+	s.Cards[userId] = append(s.Cards[userId], newCard)
 
 	return newCard, nil
 }

@@ -37,7 +37,6 @@ func (s *Server) getCards(w http.ResponseWriter, r *http.Request) {
 	}
 
 	intUserId, err := strconv.Atoi(userId)
-	
 	if err != nil {
 		dtos := dto.CardErrDTO{Err: card.ErrUserDoesNotExist.Error()}
 		jsonResponse(w, r, dtos)
@@ -55,6 +54,7 @@ func (s *Server) getCards(w http.ResponseWriter, r *http.Request) {
 				Number: c.Number,
 				Type:   c.Type,
 				Issuer: c.Issuer,
+				UserId: card.UserID(intUserId),
 			})
 	}
 	jsonResponse(w, r, dtos)
@@ -83,7 +83,7 @@ func (s *Server) addCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dtos := []*dto.CardDTO{}
+	var dtos []*dto.CardDTO
 	dtos = append(dtos,
 		&dto.CardDTO{
 			Id:     newCard.Id,
