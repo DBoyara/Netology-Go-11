@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-const defaultPort = "8000"
+const defaultPort = "9999"
 const defaultHost = "127.0.0.1"
 
 func main() {
