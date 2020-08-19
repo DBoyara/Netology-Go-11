@@ -13,22 +13,42 @@ var (
 	ErrNotSpecifiedUserId = errors.New("user id unspecified ")
 )
 
+type UserCards []*Card
+
+type UserID int64
+
 type Card struct {
-	Issuer, Type       string
-	Id, UserId, Number int64
+	Id     int64
+	Issuer string
+	Type   string
+	Number int64
 }
 
 type Service struct {
-	mu    sync.RWMutex
-	Cards []*Card
+	mu     sync.RWMutex
+	Cards  map[UserID]UserCards
+	lastID int64
 }
 
 func NewService() *Service {
 	return &Service{}
 }
 
-func (s *Service) All() []*Card {
-	return s.Cards
+func (s *Service) All(id UserID) (UserCards, error) {
+	cards, err := s.getCardsByUserID(id)
+	if err != nil {
+		return UserCards{}, err
+	}
+	return cards, nil
+}
+
+// раз мы работаем с упорядоченным массивом, то можно просто взять последний элемент с его номером
+func (c UserCards) nextCardNumber() int64 {
+	if len(c) == 0 {
+		return 0
+	}
+	i := c[len(c)-1]
+	return setNumber(i.Number)
 }
 
 func setNumber(num int64) int64 {
@@ -36,8 +56,22 @@ func setNumber(num int64) int64 {
 	return num
 }
 
-func (s *Service) Add(userId int64, typeCard, idIssuerCard string) (*Card, error) {
-	err := getIssuerCard(idIssuerCard)
+func (s *Service) getCardsByUserID(id UserID) (UserCards, error) {
+	v, ok := s.Cards[id]
+	if !ok {
+		return UserCards{}, ErrNoBaseCard
+	}
+	return v, nil
+}
+
+func (s *Service) Add(userId int64, typeCard, issuerCard string) (*Card, error) {
+
+	cards, err := s.getCardsByUserID(UserID(userId))
+	if err != nil && typeCard != "base" {
+		return &Card{}, err
+	}
+
+	err = getIssuerCard(issuerCard)
 	if err != nil {
 		return &Card{}, err
 	}
@@ -47,28 +81,23 @@ func (s *Service) Add(userId int64, typeCard, idIssuerCard string) (*Card, error
 		return &Card{}, err
 	}
 
-	number, err := s.getBaseCard(userId)
-	if err != nil && typeCard != "base" {
-		return &Card{}, err
-	}
+	s.lastID = cards.nextCardNumber()
 
-	card := &Card{
-		Id:     setNumber(number),
-		UserId: userId,
-		Number: setNumber(number),
+	newCard := &Card{
+		Id:     s.lastID,
+		Issuer: issuerCard,
 		Type:   typeCard,
-		Issuer: idIssuerCard,
+		Number: s.lastID,
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.Cards = append(s.Cards, card)
-	return card, nil
+	cards = append(cards, newCard)
+
+	return newCard, nil
 }
 
 func getIssuerCard(issuerCard string) error {
 	issuers := map[string]struct{}{
-		"Visa": {},
-		"Maestro": {},
+		"Visa":       {},
+		"Maestro":    {},
 		"MasterCard": {},
 	}
 
@@ -81,9 +110,9 @@ func getIssuerCard(issuerCard string) error {
 
 func getTypeCard(typeCard string) error {
 	types := map[string]struct{}{
-		"basic": {},
+		"base":       {},
 		"additional": {},
-		"virtual": {},
+		"virtual":    {},
 	}
 
 	if _, ok := types[typeCard]; !ok {
@@ -92,13 +121,4 @@ func getTypeCard(typeCard string) error {
 
 	return nil
 
-}
-
-func (s *Service) getBaseCard(userId int64) (number int64, err error) {
-	for _, value := range s.Cards {
-		if value.UserId == userId {
-			return value.Number, nil
-		}
-	}
-	return 0, ErrNoBaseCard
 }

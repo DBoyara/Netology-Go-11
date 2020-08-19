@@ -44,21 +44,18 @@ func (s *Server) getCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cards := s.cardSvc.All()
+	cards, _ := s.cardSvc.All(card.UserID(intUserId))
 	var dtos []*dto.CardDTO
 
 	for _, c := range cards {
-		if int64(intUserId) == c.UserId {
-			dtos = append(
-				dtos,
-				&dto.CardDTO{
-					Id:     c.Id,
-					UserId: c.UserId,
-					Number: c.Number,
-					Type:   c.Type,
-					Issuer: c.Issuer,
-				})
-		}
+		dtos = append(
+			dtos,
+			&dto.CardDTO{
+				Id:     c.Id,
+				Number: c.Number,
+				Type:   c.Type,
+				Issuer: c.Issuer,
+			})
 	}
 	jsonResponse(w, r, dtos)
 }
@@ -90,7 +87,7 @@ func (s *Server) addCard(w http.ResponseWriter, r *http.Request) {
 	dtos = append(dtos,
 		&dto.CardDTO{
 			Id:     newCard.Id,
-			UserId: newCard.UserId,
+			UserId: params.UserId,
 			Number: newCard.Number,
 			Type:   newCard.Type,
 			Issuer: newCard.Issuer,
